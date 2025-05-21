@@ -50,7 +50,6 @@
 
 # Secure image
 
-
 # ----------------- Build Stage -----------------
 FROM node:18-alpine AS build
 
@@ -70,7 +69,7 @@ FROM nginx:alpine
 # Remove default nginx config
 RUN rm /etc/nginx/conf.d/default.conf
 
-# Copy custom nginx config (make sure you have nginx.conf alongside this Dockerfile)
+# Copy custom nginx config (make sure nginx.conf is in the build context)
 COPY nginx.conf /etc/nginx/nginx.conf
 
 # Copy build output from build stage
@@ -82,8 +81,11 @@ RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 # Lock root user password (disable root login)
 RUN passwd -l root
 
-# Change ownership of web files to non-root user
+# Change ownership of web files to new user
 RUN chown -R appuser:appgroup /usr/share/nginx/html
+
+# Fix permissions for nginx cache temp folder so non-root user can write
+RUN mkdir -p /var/cache/nginx/client_temp && chown -R appuser:appgroup /var/cache/nginx
 
 # Switch to non-root user
 USER appuser
