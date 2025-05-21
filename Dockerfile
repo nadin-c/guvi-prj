@@ -192,29 +192,25 @@ COPY . .
 RUN npm run build && npm cache clean --force
 
 # ----------------- Production Stage -----------------
-FROM nginx:1.25-alpine3.19
+FROM nginx:1.25-alpine3.21
 
-# Update and upgrade base image to patch known vulnerabilities
+# 🔧 Update vulnerable packages
 RUN apk update && apk upgrade --no-cache
 
 # Remove default NGINX config
 RUN rm -f /etc/nginx/conf.d/default.conf
 
-# Add your custom config
+# Add custom config
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Copy build output from build stage
+# Copy build output from builder
 COPY --from=build /app/build /usr/share/nginx/html
 
-# Set permissions for running as non-root
+# Set proper permissions (optional)
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup \
     && chown -R appuser:appgroup /usr/share/nginx/html /var/cache/nginx /run
 
-# Switch to non-root user (optional for extra security)
-USER appuser
+# USER appuser  # Uncomment for non-root run
 
-# Expose web server port
 EXPOSE 80
-
-# Start nginx
 CMD ["nginx", "-g", "daemon off;"]
