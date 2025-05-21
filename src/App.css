@@ -1,0 +1,101 @@
+body, html, .App {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Background gradient animation */
+.App {
+  background: linear-gradient(270deg, #ff6ec4, #7873f5, #4ef0a2, #ffc785);
+  background-size: 800% 800%;
+  animation: backgroundGradient 20s ease infinite;
+  position: relative;
+}
+
+/* Centered gradient text */
+.centered-text {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.gradient-text {
+  font-size: 2.5rem;
+  font-weight: bold;
+  background: linear-gradient(to right, #00c6ff, #0072ff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: glow 2s ease-in-out infinite alternate;
+  text-align: center;
+}
+
+/* Burst effect from keypress */
+.burst {
+  position: absolute;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  animation: pop 1s ease-out forwards;
+  opacity: 0.8;
+  pointer-events: none;
+  z-index: 999;
+}
+
+/* Keyframes for background animation */
+@keyframes backgroundGradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Keyframes for text glow */
+@keyframes glow {
+  from { text-shadow: 0 0 10px rgba(0, 198, 255, 0.7); }
+  to { text-shadow: 0 0 20px rgba(0, 114, 255, 1); }
+}
+
+/* Keyframes for burst animation */
+@keyframes pop {
+  0% {
+    transform: scale(0.5);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(3);
+    opacity: 0;
+  }
+}
+
+/* Rest of the CSS remains same as before */
+
+.burst {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  animation: pop 1s ease-out forwards;
+  opacity: 0.85;
+  pointer-events: none;
+  z-index: 999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.burst-key {
+  color: white;
+  font-size: 1.5rem;
+  font-weight: bold;
+  text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.5);
+  transform: scale(1);
+  animation: scaleUp 0.3s ease-in-out;
+}
+
+@keyframes scaleUp {
+  0% { transform: scale(0.4); opacity: 0.4; }
+  100% { transform: scale(1); opacity: 1; }
+}
