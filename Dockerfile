@@ -49,29 +49,45 @@
 
 
 # Secure image
+
+
+# ----------------- Build Stage -----------------
+FROM node:18-alpine AS build
+
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
+
+COPY . .
+
+RUN npm run build && npm cache clean --force
+
+
 # ----------------- Final Stage -----------------
 FROM nginx:alpine
 
-# Remove default NGINX config
+# Remove default nginx config
 RUN rm /etc/nginx/conf.d/default.conf
 
-# Copy custom nginx config
+# Copy custom nginx config (make sure you have nginx.conf alongside this Dockerfile)
 COPY nginx.conf /etc/nginx/nginx.conf
 
-# Copy build output
+# Copy build output from build stage
 COPY --from=build /app/build /usr/share/nginx/html
 
-# ---- Security: Create non-root user ----
+# Create non-root user and group
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
-# ---- Security: Lock root user (disable password login) ----
+# Lock root user password (disable root login)
 RUN passwd -l root
 
-# Change ownership to new user
+# Change ownership of web files to non-root user
 RUN chown -R appuser:appgroup /usr/share/nginx/html
 
-# Use non-root user
+# Switch to non-root user
 USER appuser
 
 EXPOSE 80
+
 CMD ["nginx", "-g", "daemon off;"]
