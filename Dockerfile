@@ -134,29 +134,40 @@
 # CMD ["nginx", "-g", "daemon off;"]
 
 
-
-
-
 # ----------------- Build Stage -----------------
 FROM node:18-alpine AS build
 
 WORKDIR /app
-COPY package*.json ./
-RUN npm ci
-COPY . .
-RUN npm run build
 
-# ----------------- Nginx Stage -----------------
+# Copy dependencies
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
+
+# Copy rest of the app source
+COPY . .
+
+# Build the React app
+RUN npm run build && npm cache clean --force
+
+# ----------------- Production Stage -----------------
 FROM nginx:alpine
 
-# Clean default config
+# Remove default NGINX config
 RUN rm -f /etc/nginx/conf.d/default.conf
 
-# Add your custom Nginx config
+# Add custom Nginx config
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Copy built files to Nginx
-COPY --from=build /app/dist /usr/share/nginx/html
+# Copy the React build output to NGINX html directory
+COPY --from=build /app/build /usr/share/nginx/html
+
+# Optional: Create and fix permissions (if you're running as non-root)
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup \
+    && chown -R appuser:appgroup /usr/share/nginx/html \
+    && chown -R appuser:appgroup /var/cache/nginx /run
+# USER appuser
 
 EXPOSE 80
+
+# Start Nginx
 CMD ["nginx", "-g", "daemon off;"]
