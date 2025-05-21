@@ -49,25 +49,14 @@
 
 
 # Secure image
-
-# ----------------- Build Stage -----------------
-FROM node:18-alpine AS build
-
-WORKDIR /app
-
-COPY package.json package-lock.json ./
-RUN npm ci --omit=dev
-
-COPY . .
-
-RUN npm run build && npm cache clean --force
-
-
 # ----------------- Final Stage -----------------
 FROM nginx:alpine
 
 # Remove default NGINX config
 RUN rm /etc/nginx/conf.d/default.conf
+
+# Copy custom nginx config
+COPY nginx.conf /etc/nginx/nginx.conf
 
 # Copy build output
 COPY --from=build /app/build /usr/share/nginx/html
