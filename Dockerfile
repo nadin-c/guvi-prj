@@ -92,14 +92,12 @@
 # EXPOSE 80
 
 # CMD ["nginx", "-g", "daemon off;"]
-
-
 # ----------------- Build Stage -----------------
 FROM node:18-alpine AS build
 
 WORKDIR /app
 
-# Copy dependencies
+# Copy dependencies and install
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 
@@ -118,16 +116,16 @@ RUN rm -f /etc/nginx/conf.d/default.conf
 # Copy the React build output to nginx's html folder
 COPY --from=build /app/build /usr/share/nginx/html
 
-# 🔧 Create and fix permissions on required Nginx directories
-RUN mkdir -p /var/cache/nginx /run && \
-    addgroup -S appgroup && adduser -S appuser -G appgroup && \
-    chown -R appuser:appgroup /usr/share/nginx/html /var/cache/nginx /run
+# ✅ Add custom nginx config
+COPY default.conf /etc/nginx/conf.d/default.conf
 
-# Switch to non-root user
+# Create non-root user
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup && \
+    chown -R appuser:appgroup /usr/share/nginx/html
+
+# Use non-root user (optional, works fine if permissions are set)
 USER appuser
 
-# Expose port
 EXPOSE 80
 
-# Start nginx
 CMD ["nginx", "-g", "daemon off;"]
