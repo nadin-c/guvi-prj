@@ -93,40 +93,70 @@
 
 # CMD ["nginx", "-g", "daemon off;"]
 
+# ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+# # ----------------- Build Stage -----------------
+# FROM node:18-alpine AS build
+
+# WORKDIR /app
+
+# # Copy dependencies and install
+# COPY package.json package-lock.json ./
+# RUN npm ci --omit=dev
+
+# # Copy rest of the app
+# COPY . .
+
+# # Build the React app
+# RUN npm run build && npm cache clean --force
+
+# # ----------------- Final Stage -----------------
+# FROM nginx:alpine
+
+# # Remove default NGINX config if it exists
+# RUN rm -f /etc/nginx/conf.d/default.conf
+
+# # Copy the React build output to nginx's html folder
+# COPY --from=build /app/build /usr/share/nginx/html
+
+# # ✅ Add custom nginx config
+# COPY default.conf /etc/nginx/conf.d/default.conf
+
+# # Create non-root user
+# RUN addgroup -S appgroup && adduser -S appuser -G appgroup && \
+#     chown -R appuser:appgroup /usr/share/nginx/html
+
+# # Use non-root user (optional, works fine if permissions are set)
+# USER appuser
+
+# EXPOSE 80
+
+# CMD ["nginx", "-g", "daemon off;"]
+
+
+
+
+
 # ----------------- Build Stage -----------------
 FROM node:18-alpine AS build
 
 WORKDIR /app
-
-# Copy dependencies and install
-COPY package.json package-lock.json ./
-RUN npm ci --omit=dev
-
-# Copy rest of the app
+COPY package*.json ./
+RUN npm ci
 COPY . .
+RUN npm run build
 
-# Build the React app
-RUN npm run build && npm cache clean --force
-
-# ----------------- Final Stage -----------------
+# ----------------- Nginx Stage -----------------
 FROM nginx:alpine
 
-# Remove default NGINX config if it exists
+# Clean default config
 RUN rm -f /etc/nginx/conf.d/default.conf
 
-# Copy the React build output to nginx's html folder
-COPY --from=build /app/build /usr/share/nginx/html
+# Add your custom Nginx config
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# ✅ Add custom nginx config
-COPY default.conf /etc/nginx/conf.d/default.conf
-
-# Create non-root user
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup && \
-    chown -R appuser:appgroup /usr/share/nginx/html
-
-# Use non-root user (optional, works fine if permissions are set)
-USER appuser
+# Copy built files to Nginx
+COPY --from=build /app/dist /usr/share/nginx/html
 
 EXPOSE 80
-
 CMD ["nginx", "-g", "daemon off;"]
