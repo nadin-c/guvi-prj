@@ -134,40 +134,87 @@
 # CMD ["nginx", "-g", "daemon off;"]
 
 
+# # ----------------- Build Stage -----------------
+# FROM node:18-alpine AS build
+
+# WORKDIR /app
+
+# # Copy dependencies
+# COPY package.json package-lock.json ./
+# RUN npm ci --omit=dev
+
+# # Copy rest of the app source
+# COPY . .
+
+# # Build the React app
+# RUN npm run build && npm cache clean --force
+
+# # ----------------- Production Stage -----------------
+# FROM nginx:alpine
+
+# # Remove default NGINX config
+# RUN rm -f /etc/nginx/conf.d/default.conf
+
+# # Add custom Nginx config
+# COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# # Copy the React build output to NGINX html directory
+# COPY --from=build /app/build /usr/share/nginx/html
+
+# # Optional: Create and fix permissions (if you're running as non-root)
+# RUN addgroup -S appgroup && adduser -S appuser -G appgroup \
+#     && chown -R appuser:appgroup /usr/share/nginx/html \
+#     && chown -R appuser:appgroup /var/cache/nginx /run
+# # USER appuser
+
+# EXPOSE 80
+
+# # Start Nginx
+# CMD ["nginx", "-g", "daemon off;"]
+
+
+
+
+
 # ----------------- Build Stage -----------------
-FROM node:18-alpine AS build
+FROM node:18-alpine3.19 AS build
 
 WORKDIR /app
 
-# Copy dependencies
+# Install only prod dependencies
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 
-# Copy rest of the app source
+# Copy source files
 COPY . .
 
-# Build the React app
+# Build React app
 RUN npm run build && npm cache clean --force
 
 # ----------------- Production Stage -----------------
-FROM nginx:alpine
+FROM nginx:1.25-alpine3.19
+
+# Update and upgrade base image to patch known vulnerabilities
+RUN apk update && apk upgrade --no-cache
 
 # Remove default NGINX config
 RUN rm -f /etc/nginx/conf.d/default.conf
 
-# Add custom Nginx config
+# Add your custom config
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Copy the React build output to NGINX html directory
+# Copy build output from build stage
 COPY --from=build /app/build /usr/share/nginx/html
 
-# Optional: Create and fix permissions (if you're running as non-root)
+# Set permissions for running as non-root
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup \
-    && chown -R appuser:appgroup /usr/share/nginx/html \
-    && chown -R appuser:appgroup /var/cache/nginx /run
-# USER appuser
+    && chown -R appuser:appgroup /usr/share/nginx/html /var/cache/nginx /run
 
+# Switch to non-root user (optional for extra security)
+USER appuser
+
+# Expose web server port
 EXPOSE 80
 
-# Start Nginx
+# Start nginx
 CMD ["nginx", "-g", "daemon off;"]
