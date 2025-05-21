@@ -1,19 +1,19 @@
 # Default-size
 
-FROM node:18
+# FROM node:18
 
-WORKDIR /app
+# WORKDIR /app
 
-COPY package*.json ./
-RUN npm install
-
-
-COPY . .
+# COPY package*.json ./
+# RUN npm install
 
 
-EXPOSE 3000
+# COPY . .
 
-CMD ["npm", "start"]
+
+# EXPOSE 3000
+
+# CMD ["npm", "start"]
 
 
 
@@ -21,25 +21,25 @@ CMD ["npm", "start"]
 
 # Reduced-size
 
-# FROM node:18-alpine AS build
-# WORKDIR /app
+FROM node:18-alpine AS build
+WORKDIR /app
 
 
-# COPY package.json package-lock.json ./
-# RUN npm ci --omit=dev
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
 
 
-# COPY . .
+COPY . .
 
 
-# RUN npm run build && npm cache clean --force
+RUN npm run build && npm cache clean --force
 
 
-# FROM nginx:alpine
+FROM nginx:alpine
 
-# RUN rm /etc/nginx/conf.d/default.conf
+RUN rm /etc/nginx/conf.d/default.conf
 
-# COPY --from=build /app/build /usr/share/nginx/html
+COPY --from=build /app/build /usr/share/nginx/html
 
-# EXPOSE 80
-# CMD ["nginx", "-g", "daemon off;"]
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
